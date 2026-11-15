@@ -147,6 +147,9 @@ textarea{resize:vertical;line-height:1.65}
 .optin-note{font-size:13px;color:var(--muted);font-weight:400}
 .transcript-live{font-size:13px;color:var(--muted);margin-top:8px;min-height:20px}
 .transcript-live .interim{opacity:.65}
+.transcript-live.on{color:var(--green);font-weight:600}
+.transcript-live.err{color:var(--red);font-weight:600}
+.optin.disabled{opacity:.6;cursor:not-allowed}
 .file-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:14px}
 input[type="file"]{max-width:100%;font-size:13.5px}
 
@@ -251,7 +254,7 @@ details ul{padding-left:18px;margin:8px 0 14px}
       <p class="sub">可选工具：录的时候顺手出一份粗文字稿，用来在下面生成纪要草稿。正式转写不用靠它 —— 授权后 Muse 读原录音出稿更准。</p>
       <label class="optin" for="liveToggle">
         <input type="checkbox" id="liveToggle">
-        <span><strong>开启边录边转文字</strong><br><span class="optin-note">勾选后，录音时浏览器会把语音发给浏览器厂商（如 Google）识别成文字，会议内容会离开本机。不勾选时不会外发。安卓 Chrome 支持较好，iPhone Safari 支持有限。</span></span>
+        <span><strong>开启边录边转文字</strong><br><span class="optin-note">勾选后，录音时浏览器会把语音发给浏览器厂商（如 Google）识别成文字，会议内容会离开本机。不勾选时不会外发。录音前或录音中勾选都立即生效，取消立即停止。电脑和安卓请用 Chrome；iPhone Safari 不支持此功能，开关会被禁用并说明。</span></span>
       </label>
       <div class="transcript-live" id="liveLine"></div>
       <label class="field">
@@ -299,7 +302,7 @@ details ul{padding-left:18px;margin:8px 0 14px}
           <li><strong>不想让这台设备再自动进入怎么办？</strong> 点上方绿条右侧的「锁定退出（取消记住）」，就会清掉这台设备的记住状态，下次打开要重新输密码。共用设备上建议这样退出。</li>
           <li><strong>点了录音没反应 / 没有授权弹窗？</strong> 请用 Chrome 或 Safari 打开这页，并检查浏览器设置里这页的麦克风权限是否被关掉。</li>
           <li><strong>能录多久？</strong> 没有在本页设上限，受手机电量和网络限制。长会议建议每 30–45 分钟停一次、等上传成功，再开新一段，更保险。</li>
-          <li><strong>边录边转文字没出来？</strong> 这个功能靠浏览器自带的语音识别，iPhone Safari 支持有限。没关系，录音文件本身是完整的，授权后 Muse 一样能转写。</li>
+          <li><strong>边录边转文字没出来？</strong> 先确认是在 Chrome 里打开、麦克风已允许。录音前或录音中勾选「开启边录边转文字」都会立即开始转，开关下方会显示「正在听」或具体的失败原因；若提示连不上识别服务，多半是网络问题，检查网络后取消勾选再重新勾选即可。iPhone Safari 没有这个功能，开关会被禁用。没关系，录音文件本身是完整的，授权后 Muse 一样能转写。</li>
         </ul>
       </details>
     </section>
@@ -477,7 +480,9 @@ details ul{padding-left:18px;margin:8px 0 14px}
   var stream=null, recorder=null, chunks=[], mimeType='';
   var audioCtx=null, analyser=null, rafId=null;
   var startStamp=0, elapsedBefore=0, timerInt=null, isRecording=false, isPaused=false;
-  var recognition=null, finalText='', recogWanted=false;
+  var recognition=null, finalText='', recogWanted=false, recogActive=false;
+  var SRConstructor=window.SpeechRecognition||window.webkitSpeechRecognition;
+  var recogSupported=!!SRConstructor;
   var wakeLock=null;
 
   function showError(msg){ errorBox.textContent=msg; errorBox.classList.add('show'); }
@@ -524,24 +529,78 @@ details ul{padding-left:18px;margin:8px 0 14px}
     timerEl.textContent=fmtClock(elapsedBefore);
     return elapsedBefore;
   }
+  function setLiveLine(msg, cls){
+    liveLine.className='transcript-live'+(cls?' '+cls:'');
+    liveLine.textContent=msg||'';
+  }
+  function recogUnsupportedMsg(){
+    return '当前浏览器不支持边录边转文字：这个功能需要 Chrome（电脑或安卓），iPhone Safari 等浏览器没有此功能。录音不受影响，授权后 Muse 读原录音一样能转写。';
+  }
   function setupRecognition(){
-    var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-    if(!SR){ liveLine.textContent='当前浏览器不支持边录边转文字，录音不受影响，授权后 Muse 一样能转写。'; return null; }
-    var r=new SR();
+    if(!recogSupported){ setLiveLine(recogUnsupportedMsg(),'err'); return null; }
+    var r=new SRConstructor();
     r.lang='zh-CN'; r.continuous=true; r.interimResults=true;
     r.onresult=function(e){
       var interim='';
       for(var i=e.resultIndex;i<e.results.length;i++){
         var t=e.results[i][0].transcript;
-        if(e.results[i].isFinal){ finalText+=t+'。'; } else { interim+=t; }
+        if(e.results[i].isFinal){ finalText+=t; if(!/[。！？；，、,.!?;]$/.test(finalText)) finalText+='。'; } else { interim+=t; }
       }
       transcriptEl.value=finalText;
-      liveLine.innerHTML='正在听…… <span class="interim"></span>';
+      liveLine.className='transcript-live on';
+      liveLine.innerHTML='🎙 边录边转进行中，正在听…… <span class="interim"></span>';
       liveLine.querySelector('.interim').textContent=interim;
     };
-    r.onerror=function(e){ if(e.error==='not-allowed'||e.error==='service-not-allowed'){ liveLine.textContent='语音识别未获授权，录音不受影响。'; recogWanted=false; } };
-    r.onend=function(){ if(recogWanted && isRecording && !isPaused){ try{ r.start(); }catch(err){} } };
+    r.onerror=function(e){
+      var code=(e && e.error) ? e.error : '';
+      if(code==='aborted') return;
+      if(code==='no-speech'){
+        // 没听到声音不算失败：保持开启，等 onend 自动续上
+        recogWanted=true;
+        setLiveLine('🎙 边录边转已开启，暂时没听到声音，说话后会自动出字。','on');
+        return;
+      }
+      recogWanted=false; recogActive=false; recognition=null;
+      if(code==='not-allowed'||code==='service-not-allowed'){
+        setLiveLine('边录边转启动失败：语音识别没有获得授权。请点 Chrome 地址栏左侧的站点权限图标，确认麦克风已允许，然后取消勾选再重新勾选一次。录音不受影响。','err');
+      } else if(code==='network'){
+        setLiveLine('边录边转启动失败：连不上浏览器厂商的识别服务（Chrome 的语音识别需要联网）。请检查网络后，取消勾选再重新勾选一次。录音不受影响。','err');
+      } else if(code==='audio-capture'){
+        setLiveLine('边录边转启动失败：识别拿不到麦克风。录音不受影响，授权后 Muse 一样能转写。','err');
+      } else {
+        setLiveLine('边录边转出错（'+(code||'未知错误')+'），已停止。可以取消勾选再重新勾选重试，录音不受影响。','err');
+      }
+    };
+    r.onend=function(){
+      recogActive=false;
+      if(recogWanted && isRecording && !isPaused && $('liveToggle').checked){
+        try{ r.start(); recogActive=true; }catch(err){}
+      }
+    };
     return r;
+  }
+  function startRecognition(){
+    if(!recogSupported){ setLiveLine(recogUnsupportedMsg(),'err'); return false; }
+    // 以当前文字稿内容为底稿接着往后追加，避免覆盖已有文字
+    var cur=transcriptEl.value||'';
+    if(cur!==finalText){ finalText=cur ? cur.replace(/\s+$/,'')+' ' : ''; }
+    if(!recognition) recognition=setupRecognition();
+    if(!recognition) return false;
+    recogWanted=true;
+    if(recogActive){ setLiveLine('🎙 边录边转进行中，正在听……','on'); return true; }
+    try{
+      recognition.start(); recogActive=true;
+      setLiveLine('🎙 边录边转已开启，正在听……说完一句话，文字会出现在下方文字稿里。','on');
+      return true;
+    }catch(err){
+      recogWanted=false; recognition=null;
+      setLiveLine('边录边转启动失败，请取消勾选再重新勾选一次。录音不受影响。','err');
+      return false;
+    }
+  }
+  function stopRecognition(){
+    recogWanted=false; recogActive=false;
+    if(recognition){ try{ recognition.stop(); }catch(e){} }
   }
   function pickMime(){
     var candidates=['audio/webm;codecs=opus','audio/webm','audio/mp4','audio/ogg;codecs=opus','audio/ogg',''];
@@ -581,11 +640,10 @@ details ul{padding-left:18px;margin:8px 0 14px}
       pauseBtn.textContent='⏸ 暂停';
       finalText=transcriptEl.value? transcriptEl.value.replace(/\s+$/,'')+' ' : '';
       if($('liveToggle').checked){
-        recognition=setupRecognition();
-        if(recognition){ recogWanted=true; try{ recognition.start(); }catch(e){} }
+        startRecognition();
       } else {
-        recognition=null; recogWanted=false;
-        liveLine.textContent='未开启边录边转文字：本次只录音。';
+        stopRecognition(); recognition=null;
+        setLiveLine('未开启边录边转文字：本次只录音。录音中随时勾选上方开关，就能立即开始转文字。');
       }
       requestWakeLock();
     })
@@ -602,8 +660,8 @@ details ul{padding-left:18px;margin:8px 0 14px}
   }
 
   function cleanupAfterStop(){
-    isRecording=false; isPaused=false; recogWanted=false;
-    if(recognition){ try{ recognition.stop(); }catch(e){} recognition=null; }
+    isRecording=false; isPaused=false;
+    stopRecognition(); recognition=null;
     if(rafId) cancelAnimationFrame(rafId); rafId=null;
     if(audioCtx){ try{ audioCtx.close(); }catch(e){} audioCtx=null; }
     analyser=null;
@@ -615,7 +673,11 @@ details ul{padding-left:18px;margin:8px 0 14px}
     timerNote.textContent='录音已结束，正在上传到云端……';
     mainBtn.classList.remove('is-recording'); mainBtn.disabled=false;
     pauseBtn.disabled=true; stopBtn.disabled=true;
-    liveLine.textContent='';
+    if($('liveToggle').checked && recogSupported){
+      setLiveLine('录音已结束，边录边转已停止。文字稿在下方框里，可以复制，或用来生成纪要草稿。','on');
+    } else {
+      setLiveLine('');
+    }
   }
 
   function uploadRecording(blob, meta){
@@ -656,18 +718,43 @@ details ul{padding-left:18px;margin:8px 0 14px}
       recorder.pause(); stopTimer(); isPaused=true;
       setStatus('paused','已暂停'); timerNote.textContent='已暂停 · 点「继续」接着录';
       pauseBtn.textContent='▶ 继续';
-      recogWanted=false; if(recognition){ try{ recognition.stop(); }catch(e){} }
+      stopRecognition();
+      if($('liveToggle').checked && recogSupported) setLiveLine('已暂停：录音和边录边转都暂停了，点「继续」后会自动接着转。');
     } else if(isPaused && recorder.state==='paused'){
       recorder.resume(); startTimer(); isPaused=false;
       setStatus('recording','录音中'); timerNote.textContent='正在录音 · 保持这页打开，不要锁屏';
       pauseBtn.textContent='⏸ 暂停';
-      if(recognition){ recogWanted=true; try{ recognition.start(); }catch(e){} }
+      if($('liveToggle').checked){ startRecognition(); }
+      else { setLiveLine('未开启边录边转文字：本次只录音。录音中随时勾选上方开关，就能立即开始转文字。'); }
     }
   });
   stopBtn.addEventListener('click', function(){
     if(!recorder) return;
     stopTimer();
     try{ recorder.stop(); }catch(e){ cleanupAfterStop(); }
+  });
+
+  // ---------- 边录边转开关：录音前、录音中、暂停时都立即生效 ----------
+  var liveToggle=$('liveToggle');
+  if(!recogSupported){
+    liveToggle.checked=false;
+    liveToggle.disabled=true;
+    var optinBox=liveToggle.closest ? liveToggle.closest('.optin') : null;
+    if(optinBox) optinBox.classList.add('disabled');
+    setLiveLine(recogUnsupportedMsg(),'err');
+  }
+  liveToggle.addEventListener('change', function(){
+    if(!recogSupported){ liveToggle.checked=false; setLiveLine(recogUnsupportedMsg(),'err'); return; }
+    if(isRecording && !isPaused){
+      if(liveToggle.checked){ startRecognition(); }
+      else { stopRecognition(); setLiveLine('已关闭边录边转文字：接下来只录音，已经转出的文字保留在下方框里。'); }
+    } else if(isRecording && isPaused){
+      if(liveToggle.checked){ setLiveLine('已开启边录边转：点「继续」接着录时，会自动开始转文字。'); }
+      else { setLiveLine('已关闭边录边转：继续录音时也只录音。'); }
+    } else {
+      if(liveToggle.checked){ setLiveLine('已开启：开始录音时会自动边录边转文字；录音中也可以随时取消，立即停止。'); }
+      else { setLiveLine(''); }
+    }
   });
 
   // upload existing file
@@ -890,7 +977,7 @@ details ul{padding-left:18px;margin:8px 0 14px}
 
   // ---------- transcript tools ----------
   $('copyTranscriptBtn').addEventListener('click', function(){ copyText(transcriptEl.value, '文字稿已复制'); });
-  $('clearTranscriptBtn').addEventListener('click', function(){ transcriptEl.value=''; finalText=''; liveLine.textContent=''; showToast('已清空'); });
+  $('clearTranscriptBtn').addEventListener('click', function(){ transcriptEl.value=''; finalText=''; if(!recogSupported){ setLiveLine(recogUnsupportedMsg(),'err'); } else if(recogWanted && isRecording && !isPaused){ setLiveLine('🎙 边录边转进行中，正在听……','on'); } else { setLiveLine(''); } showToast('已清空'); });
 
   initGate();
 })();
