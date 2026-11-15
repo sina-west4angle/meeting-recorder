@@ -1,0 +1,877 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:,">
+<title>录音纪要</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700;900&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF1EE;
+  --surface:#FFFFFF;
+  --surface2:#F6F8F6;
+  --ink:#17201C;
+  --muted:#66736B;
+  --line:#DCE3DD;
+  --red:#C93A2E;
+  --red-soft:#FDF0EE;
+  --green:#17684A;
+  --green-soft:#EAF4EF;
+  --amber:#8A5A00;
+  --amber-soft:#FFF6DE;
+  --radius:18px;
+  --shadow:0 8px 30px rgba(23,32,28,.08);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#111614;
+    --surface:#1B2220;
+    --surface2:#232B28;
+    --ink:#EAF0EC;
+    --muted:#9AA8A0;
+    --line:#303B36;
+    --red:#FF6B5E;
+    --red-soft:#2E1D1B;
+    --green:#5ED0A0;
+    --green-soft:#173027;
+    --amber:#FFC24B;
+    --amber-soft:#2E2612;
+    --shadow:0 8px 30px rgba(0,0,0,.35);
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans SC",system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.6}
+a{color:var(--green);text-decoration:underline;text-underline-offset:3px}
+button,input,textarea,select{font:inherit}
+button{min-height:44px}
+.wrap{max-width:760px;margin:0 auto;padding:20px 16px 48px}
+@media(min-width:720px){.wrap{padding:32px 24px 64px}}
+
+/* header */
+.top{padding:8px 2px 18px}
+.top h1{font-family:"Noto Serif SC",serif;font-weight:900;font-size:38px;line-height:1.05;letter-spacing:-.02em;margin:0}
+.top h1 span{color:var(--red)}
+.top p{margin:10px 0 0;color:var(--muted);font-size:15.5px;max-width:56ch}
+.pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.pill{font-size:12.5px;font-weight:600;padding:6px 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--muted)}
+.pill strong{color:var(--ink)}
+
+/* cards */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-top:16px}
+@media(min-width:720px){.card{padding:26px}}
+.card h2{font-family:"Noto Serif SC",serif;font-size:21px;line-height:1.2;margin:0 0 6px}
+.card h2 small{font-family:"Noto Sans SC",sans-serif;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-left:8px;vertical-align:middle}
+.sub{color:var(--muted);font-size:14px;margin:0}
+
+/* gate */
+.gate{text-align:left}
+.gate .lock-badge{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;letter-spacing:.06em;padding:7px 12px;border-radius:999px;background:var(--surface2);border:1px solid var(--line);color:var(--muted)}
+.gate-msg{font-size:14px;color:var(--muted);margin:12px 0 0}
+.gate-err{display:none;margin-top:12px;background:var(--red-soft);color:var(--red);border-radius:10px;padding:12px 14px;font-size:14px;font-weight:600}
+.gate-err.show{display:block}
+.session-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:16px;background:var(--green-soft);border-radius:12px;padding:10px 14px;font-size:14px}
+.session-bar b{color:var(--green)}
+
+/* recorder */
+.recorder{text-align:center;padding-top:28px;padding-bottom:26px}
+.recorder .meta-fields{text-align:left;margin-bottom:6px}
+.status{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;letter-spacing:.06em;padding:7px 12px;border-radius:999px;background:var(--surface2);border:1px solid var(--line);color:var(--muted)}
+.dot{width:9px;height:9px;border-radius:50%;background:#A9B5AD;flex:none}
+.status.recording{color:var(--red);background:var(--red-soft);border-color:transparent}
+.status.recording .dot{background:var(--red);animation:pulse 1.2s infinite}
+.status.paused{color:var(--amber);background:var(--amber-soft);border-color:transparent}
+.status.paused .dot{background:var(--amber)}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.8)}}
+@media (prefers-reduced-motion: reduce){.status.recording .dot{animation:none}}
+.timer{font-variant-numeric:tabular-nums;font-weight:800;font-size:56px;line-height:1;letter-spacing:-.03em;margin:18px 0 4px}
+@media(min-width:720px){.timer{font-size:68px}}
+.timer-note{font-size:13px;color:var(--muted);margin:0}
+#wave{width:100%;height:72px;display:block;margin:18px auto 6px;background:var(--surface2);border:1px solid var(--line);border-radius:12px}
+.big-btn{width:96px;height:96px;border-radius:50%;border:none;background:var(--red);color:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;margin-top:14px;box-shadow:0 10px 24px rgba(201,58,46,.32);transition:transform .15s, background .15s}
+.big-btn:active{transform:scale(.96)}
+.big-btn .rec-icon{width:34px;height:34px;border-radius:50%;background:#fff}
+.big-btn.is-recording .rec-icon{border-radius:6px;width:28px;height:28px}
+.big-btn:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
+.controls{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:18px}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:10px 16px;border-radius:999px;font-weight:700;font-size:14.5px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;min-height:44px}
+.btn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn.green{background:var(--green);border-color:var(--green);color:#fff}
+.btn.danger{color:var(--red);border-color:var(--red)}
+.btn.danger.confirm{background:var(--red);border-color:var(--red);color:#fff}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.small{padding:8px 12px;font-size:13.5px;min-height:38px}
+.hint{margin-top:14px;font-size:13px;color:var(--muted);background:var(--surface2);border-radius:10px;padding:10px 12px;text-align:left}
+.hint strong{color:var(--ink)}
+.error{display:none;margin-top:12px;text-align:left;background:var(--red-soft);color:var(--red);border-radius:10px;padding:12px 14px;font-size:14px;font-weight:600}
+.error.show{display:block}
+.upload-status{display:none;margin-top:12px;text-align:left;border-radius:10px;padding:12px 14px;font-size:14px;font-weight:600;background:var(--surface2);color:var(--muted)}
+.upload-status.show{display:block}
+.upload-status.ok{background:var(--green-soft);color:var(--green)}
+.upload-status.fail{background:var(--red-soft);color:var(--red)}
+
+/* list items */
+.rec-item{border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:12px;background:var(--surface2)}
+.rec-item-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline}
+.rec-item-head b{font-size:15px}
+.rec-meta{font-size:12.5px;color:var(--muted)}
+.rec-item audio{width:100%;margin-top:10px;height:40px}
+.rec-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;align-items:center}
+.empty{border:1.5px dashed var(--line);border-radius:14px;padding:18px;text-align:center;color:var(--muted);font-size:14px;margin-top:12px}
+.allow-row{display:flex;align-items:center;gap:10px;margin-top:12px;border-top:1px dashed var(--line);padding-top:12px;flex-wrap:wrap}
+.allow-label{font-size:13.5px;font-weight:700}
+.allow-state{font-size:12.5px;color:var(--muted)}
+.allow-state.on{color:var(--green);font-weight:700}
+.switch{position:relative;width:52px;height:30px;border-radius:999px;border:1px solid var(--line);background:var(--surface);cursor:pointer;padding:0;min-height:30px;flex:none;transition:background .15s,border-color .15s}
+.switch .knob{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#A9B5AD;transition:left .15s,background .15s}
+.switch[aria-checked="true"]{background:var(--green);border-color:var(--green)}
+.switch[aria-checked="true"] .knob{left:25px;background:#fff}
+.min-body{white-space:pre-wrap;font-size:14px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:10px;max-height:220px;overflow:auto}
+.linked{font-size:12px;font-weight:700;color:var(--green);background:var(--green-soft);border-radius:999px;padding:3px 9px}
+
+/* forms */
+label.field{display:block;margin-top:14px}
+label.field span{display:block;font-size:13px;font-weight:700;margin-bottom:6px}
+label.field span em{font-style:normal;color:var(--muted);font-weight:400}
+input[type="text"],input[type="password"],input[type="date"],textarea{width:100%;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:11px 12px;outline:none}
+input[type="text"]:focus,input[type="password"]:focus,input[type="date"]:focus,textarea:focus{border-color:var(--green);box-shadow:0 0 0 3px var(--green-soft)}
+textarea{resize:vertical;line-height:1.65}
+.grid2{display:grid;gap:0 14px}
+@media(min-width:600px){.grid2{grid-template-columns:1fr 1fr}}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.optin{display:flex;gap:10px;align-items:flex-start;margin-top:14px;border:1px solid var(--line);background:var(--surface2);border-radius:12px;padding:12px 14px;cursor:pointer;min-height:44px}
+.optin input[type="checkbox"]{width:20px;height:20px;margin-top:2px;flex:none;accent-color:var(--green)}
+.optin-note{font-size:13px;color:var(--muted);font-weight:400}
+.transcript-live{font-size:13px;color:var(--muted);margin-top:8px;min-height:20px}
+.transcript-live .interim{opacity:.65}
+.file-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:14px}
+input[type="file"]{max-width:100%;font-size:13.5px}
+
+/* steps */
+.steps{display:grid;gap:12px;margin-top:14px}
+@media(min-width:600px){.steps{grid-template-columns:1fr 1fr 1fr}}
+.step{border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--surface2)}
+.step b{display:flex;align-items:center;gap:8px;font-size:14.5px}
+.step-num{width:26px;height:26px;border-radius:50%;background:var(--ink);color:var(--bg);display:inline-flex;align-items:center;justify-content:center;font-size:13px;flex:none}
+.step p{margin:6px 0 0;font-size:13.5px;color:var(--muted)}
+.note-box{margin-top:14px;border-radius:12px;padding:14px;background:var(--amber-soft);font-size:14px}
+.note-box strong{color:var(--amber)}
+details{margin-top:14px;border:1px solid var(--line);border-radius:12px;padding:4px 14px;background:var(--surface2)}
+summary{cursor:pointer;font-weight:700;padding:10px 0;min-height:44px;display:flex;align-items:center}
+details p,details li{font-size:14px;color:var(--muted)}
+details ul{padding-left:18px;margin:8px 0 14px}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:14px;font-weight:700;opacity:0;pointer-events:none;transition:.25s;z-index:20;max-width:92vw;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.footer{margin-top:22px;text-align:center;color:var(--muted);font-size:12.5px;line-height:1.7;padding:0 8px}
+[hidden]{display:none !important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>录音纪要<span>。</span></h1>
+    <p>开会时把手机放桌上、外放打开，点红按钮就录。录音自动存到云端，不用再手动发文件 —— 你在下面点开某条录音的「允许读取」，Muse 才能读它、转写出纪要。录音和纪要分开存、分开删，互不影响。</p>
+    <div class="pills">
+      <span class="pill">🔑 <strong>密码进门</strong> · 拿到密码就能操作</span>
+      <span class="pill">☁️ <strong>录音存云端</strong> · 离开这页也还在</span>
+      <span class="pill">🛡️ <strong>默认不授权</strong> · 点了允许 Muse 才能读</span>
+    </div>
+  </header>
+
+  <!-- Password gate -->
+  <section class="card gate" id="gateCard" aria-label="密码验证">
+    <span class="lock-badge">🔒 密码门</span>
+    <div id="gateLoading">
+      <p class="gate-msg">正在连接存储服务……</p>
+    </div>
+    <div id="gateSetup" hidden>
+      <h2 style="margin-top:14px">先设一个管理密码</h2>
+      <p class="gate-msg">这是第一次打开，还没有密码。请管理员（你本人）设一个：以后任何人打开这页，都要输对这个密码才能看到录音和纪要、才能操作。把密码告诉哪个 Muse，哪个 Muse 就能进来操作。</p>
+      <label class="field"><span>设置密码 <em>（至少 6 位，请记牢）</em></span><input type="password" id="setupPw1" autocomplete="new-password" placeholder="输入密码"></label>
+      <label class="field"><span>再输一次确认</span><input type="password" id="setupPw2" autocomplete="new-password" placeholder="再输入一次"></label>
+      <div class="toolbar"><button class="btn green" id="setupBtn">设好密码并进入</button></div>
+    </div>
+    <div id="gateLogin" hidden>
+      <h2 style="margin-top:14px">输入密码进入</h2>
+      <p class="gate-msg">录音和纪要都锁在密码后面。输对密码才能看列表、播放、授权和删除。</p>
+      <label class="field"><span>密码</span><input type="password" id="loginPw" autocomplete="current-password" placeholder="输入密码"></label>
+      <div class="toolbar"><button class="btn green" id="loginBtn">进入</button></div>
+    </div>
+    <div class="gate-err" id="gateErr"></div>
+  </section>
+
+  <div id="appMain" hidden>
+    <div class="session-bar">
+      <span>✅ <b>已进入</b> · 录音与纪要都在云端，关掉页面不会丢</span>
+      <button class="btn small" id="lockBtn">锁定退出</button>
+    </div>
+
+    <!-- Recorder -->
+    <section class="card recorder" aria-label="录音">
+      <div class="meta-fields">
+        <div class="grid2">
+          <label class="field" style="margin-top:0"><span>会议标题</span><input type="text" id="recTitle" placeholder="如：项目交付节点对齐会"></label>
+          <label class="field" style="margin-top:0"><span>参会人 <em>（可不填）</em></span><input type="text" id="recPeople" placeholder="如：张总, 小李, 王工"></label>
+        </div>
+      </div>
+      <div class="status" id="statusBadge"><span class="dot"></span><span id="statusText">未开始</span></div>
+      <div class="timer" id="timer">00:00:00</div>
+      <p class="timer-note" id="timerNote">点红色按钮开始 · 首次使用会弹出麦克风授权，请点「允许」</p>
+      <canvas id="wave" width="640" height="72" aria-hidden="true"></canvas>
+      <button class="big-btn" id="mainBtn" aria-label="开始录音"><span class="rec-icon"></span></button>
+      <div class="controls">
+        <button class="btn" id="pauseBtn" disabled>⏸ 暂停</button>
+        <button class="btn primary" id="stopBtn" disabled>■ 结束并上传保存</button>
+      </div>
+      <div class="error" id="errorBox"></div>
+      <div class="upload-status" id="uploadStatus"></div>
+      <div class="hint">
+        <strong>录之前先做两件事：</strong> ① 先告知在场的人「这场会要录音」；② 手机调到外放、音量适中，放在离说话人 1 米内、别压在纸下面；录音时别锁屏、别切到别的 App。录得越清楚，转写越准。录完会自动上传保存，<strong>默认不授权</strong> —— Muse 读不到，直到你在下方列表里点开「允许读取」。
+      </div>
+    </section>
+
+    <!-- Recordings -->
+    <section class="card" aria-label="录音列表">
+      <h2>录音 <small>Recordings</small></h2>
+      <p class="sub">每条录音独立一行：可以播放、下载、删除。删除录音<strong>不会</strong>删掉它的纪要。「允许读取」打开后，Muse 才能读这条录音转写出纪要；随时可以关掉撤销。</p>
+      <div class="file-row">
+        <input type="file" id="fileInput" accept="audio/*">
+        <button class="btn small" id="fileUploadBtn">⬆️ 上传已有录音文件</button>
+        <span class="rec-meta">比如腾讯会议 / 飞书导出的录音，也可以传到这里统一管。</span>
+      </div>
+      <div id="recList"><div class="empty">正在加载录音列表……</div></div>
+    </section>
+
+    <!-- Transcript helper -->
+    <section class="card" aria-label="文字稿">
+      <h2>文字稿 <small>Transcript</small></h2>
+      <p class="sub">可选工具：录的时候顺手出一份粗文字稿，用来在下面生成纪要草稿。正式转写不用靠它 —— 授权后 Muse 读原录音出稿更准。</p>
+      <label class="optin" for="liveToggle">
+        <input type="checkbox" id="liveToggle">
+        <span><strong>开启边录边转文字</strong><br><span class="optin-note">勾选后，录音时浏览器会把语音发给浏览器厂商（如 Google）识别成文字，会议内容会离开本机。不勾选时不会外发。安卓 Chrome 支持较好，iPhone Safari 支持有限。</span></span>
+      </label>
+      <div class="transcript-live" id="liveLine"></div>
+      <label class="field">
+        <span>逐字稿 / 现场笔记 <em>（也可以手动粘贴别的转写结果）</em></span>
+        <textarea id="transcript" rows="6" placeholder="例如：&#10;张总：这个季度先把交付节点定下来……&#10;小李：我负责跟进供应商，周五前给报价……"></textarea>
+      </label>
+      <div class="toolbar">
+        <button class="btn small" id="copyTranscriptBtn">📋 复制文字稿</button>
+        <button class="btn small" id="clearTranscriptBtn">清空</button>
+      </div>
+    </section>
+
+    <!-- Minutes -->
+    <section class="card" aria-label="纪要">
+      <h2>纪要 <small>Minutes</small></h2>
+      <p class="sub">纪要和录音分开存：每条纪要有自己的删除按钮，删纪要<strong>不会</strong>动录音，删录音也不会动纪要。这里可以先存页内草稿；正式版让 Muse 读已授权的录音后生成，再粘回来保存。</p>
+      <label class="field"><span>纪要标题</span><input type="text" id="minTitle" placeholder="如：项目交付节点对齐会 — 纪要"></label>
+      <label class="field"><span>纪要内容</span><textarea id="minContent" rows="9" placeholder="在这里写纪要，或在某条录音上点「生成纪要草稿」先出一版……"></textarea></label>
+      <p class="rec-meta" id="minLinkNote"></p>
+      <div class="toolbar">
+        <button class="btn green" id="minSaveBtn">💾 保存纪要</button>
+        <button class="btn" id="minCancelEditBtn" hidden>取消编辑</button>
+        <button class="btn" id="minCopyBtn">📋 复制</button>
+        <button class="btn" id="minDlBtn">⬇️ 下载 .md</button>
+      </div>
+      <div id="minList"><div class="empty">正在加载纪要列表……</div></div>
+    </section>
+
+    <!-- How to use -->
+    <section class="card" aria-label="使用说明">
+      <h2>怎么用最顺</h2>
+      <div class="steps">
+        <div class="step"><b><span class="step-num">1</span>输密码，点录音</b><p>开会前打开这页、输密码进入，把手机放桌子中间、外放打开，点红按钮开录。重要会议先录 10 秒试听回放，确认能听清。</p></div>
+        <div class="step"><b><span class="step-num">2</span>结束自动上传</b><p>点「结束并上传保存」，录音就存到云端列表里了。新录音默认不授权，任何 Muse 都读不到。</p></div>
+        <div class="step"><b><span class="step-num">3</span>点允许读取，叫 Muse</b><p>在录音列表里打开那条的「允许读取」，再回 Muse 对话说一句「读一下我授权的录音出纪要」，就会得到带决议和待办的正式版。</p></div>
+      </div>
+      <div class="note-box"><strong>线上会（方案 3）：</strong> 如果是在腾讯会议 / 飞书开会，优先用它自带的「录制 + AI 纪要 / 妙记」—— 收音是每个人的原声，比外放录音清楚得多。导出的录音文件可以用上面的「上传已有录音文件」传到这里统一管理，文字稿也可以粘到文字稿框里再生成纪要。</div>
+      <details>
+        <summary>常见问题</summary>
+        <ul>
+          <li><strong>删了录音，纪要还在吗？</strong> 在。录音和纪要分开存、分开删：删录音只删音频文件和录音记录，纪要一条不动；反过来删纪要也不动录音。纪要做好后想删录音省空间、保隐私，放心删。</li>
+          <li><strong>「允许读取」关掉会怎样？</strong> Muse 立刻就读不到这条了。授权随时开、随时撤，不用等谁批准。</li>
+          <li><strong>密码忘了怎么办？</strong> 密码只存了加密摘要，这页没法找回。让 Muse 帮你在后台清空密码，你下次打开时重新设一个即可。</li>
+          <li><strong>点了录音没反应 / 没有授权弹窗？</strong> 请用 Chrome 或 Safari 打开这页，并检查浏览器设置里这页的麦克风权限是否被关掉。</li>
+          <li><strong>能录多久？</strong> 没有在本页设上限，受手机电量和网络限制。长会议建议每 30–45 分钟停一次、等上传成功，再开新一段，更保险。</li>
+          <li><strong>边录边转文字没出来？</strong> 这个功能靠浏览器自带的语音识别，iPhone Safari 支持有限。没关系，录音文件本身是完整的，授权后 Muse 一样能转写。</li>
+        </ul>
+      </details>
+    </section>
+  </div>
+
+  <p class="footer">录音前请先告知在场人员正在录音。只有你点开「允许读取」的录音，Muse 才会读取；未授权的录音 Muse 读不到。</p>
+</div>
+<div class="toast" id="toast">已复制</div>
+
+<script>
+(function(){
+  "use strict";
+  // ---------- Supabase (publishable key only; safe for a public page) ----------
+  var SB_URL='https://ocqfhempmbxmriecijrg.supabase.co';
+  var SB_KEY='sb_publishable_plB6Ccd-Wr9XnA8n2W-7eA_HjUb9ydE';
+  var REST=SB_URL+'/rest/v1';
+  var BUCKET='meeting-recordings';
+
+  function sbHeaders(extra){
+    var h={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};
+    if(extra) for(var k in extra) h[k]=extra[k];
+    return h;
+  }
+  function api(path, opts){
+    opts=opts||{};
+    var headers=sbHeaders(opts.headers);
+    if(opts.body && typeof opts.body!=='string' && !(opts.body instanceof Blob)) { headers['Content-Type']='application/json'; opts.body=JSON.stringify(opts.body); }
+    return fetch(REST+path, {method:opts.method||'GET', headers:headers, body:opts.body})
+      .then(function(r){
+        if(!r.ok) return r.text().then(function(t){ throw new Error('HTTP '+r.status+' '+t.slice(0,160)); });
+        return r.status===204 ? null : r.json().catch(function(){ return null; });
+      });
+  }
+  function publicUrl(path){
+    return SB_URL+'/storage/v1/object/public/'+BUCKET+'/'+path.split('/').map(encodeURIComponent).join('/');
+  }
+  function uuid(){
+    if(window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){ var r=Math.random()*16|0; return (c==='x'?r:(r&0x3|0x8)).toString(16); });
+  }
+  function sha256Hex(str){
+    var buf=new TextEncoder().encode(str);
+    return crypto.subtle.digest('SHA-256', buf).then(function(h){
+      return Array.prototype.map.call(new Uint8Array(h), function(b){ return ('0'+b.toString(16)).slice(-2); }).join('');
+    });
+  }
+
+  // ---------- helpers ----------
+  function $(id){ return document.getElementById(id); }
+  function pad(n){ return (n<10?'0':'')+n; }
+  function fmtClock(ms){ var s=Math.floor(ms/1000); return pad(Math.floor(s/3600))+':'+pad(Math.floor((s%3600)/60))+':'+pad(s%60); }
+  function fmtDur(sec){ if(sec==null) return '时长未知'; sec=Math.round(sec); var m=Math.floor(sec/60); return m>0 ? m+'分'+pad(sec%60)+'秒' : sec+'秒'; }
+  function fmtSize(b){ if(b==null) return ''; if(b<1024) return b+' B'; if(b<1048576) return Math.round(b/1024)+' KB'; return (b/1048576).toFixed(1)+' MB'; }
+  function fmtDate(iso){ if(!iso) return ''; var d=new Date(iso); if(isNaN(d)) return ''; return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes()); }
+  function fileStamp(){ var d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'_'+pad(d.getHours())+pad(d.getMinutes()); }
+  function extFor(mime){ if(!mime) return 'webm'; if(mime.indexOf('mp4')>-1) return 'm4a'; if(mime.indexOf('ogg')>-1) return 'ogg'; if(mime.indexOf('wav')>-1) return 'wav'; if(mime.indexOf('mpeg')>-1) return 'mp3'; return 'webm'; }
+  var toastEl=$('toast'), toastTimer=null;
+  function showToast(msg){ toastEl.textContent=msg; toastEl.classList.add('show'); if(toastTimer) clearTimeout(toastTimer); toastTimer=setTimeout(function(){ toastEl.classList.remove('show'); },2400); }
+  function copyText(text,msg){
+    if(!text){ showToast('这里还是空的'); return; }
+    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(function(){ showToast(msg); }).catch(function(){ fallbackCopy(text,msg); }); }
+    else fallbackCopy(text,msg);
+  }
+  function fallbackCopy(text,msg){
+    var ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); showToast(msg); }catch(e){ showToast('复制失败，请长按手动复制'); }
+    document.body.removeChild(ta);
+  }
+  function downloadText(text, filename){
+    var blob=new Blob([text],{type:'text/markdown;charset=utf-8'});
+    var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(a.href); },2000);
+  }
+  // two-step confirm on a button
+  function armConfirm(btn, label, fn){
+    if(btn.dataset.armed==='1'){ btn.dataset.armed=''; btn.textContent=label; btn.classList.remove('confirm'); fn(); return; }
+    btn.dataset.armed='1'; btn.textContent='再点一次确认删除'; btn.classList.add('confirm');
+    setTimeout(function(){ if(btn.dataset.armed==='1'){ btn.dataset.armed=''; btn.textContent=label; btn.classList.remove('confirm'); } },3500);
+  }
+
+  // ---------- password gate ----------
+  var gateErr=$('gateErr');
+  function gateError(msg){ gateErr.textContent=msg; gateErr.classList.add('show'); }
+  function gateClear(){ gateErr.classList.remove('show'); gateErr.textContent=''; }
+  var storedHash=null;
+
+  function loadConfig(){
+    return api('/meeting_app_config?select=value&key=eq.app_password_sha256')
+      .then(function(rows){ storedHash=(rows && rows.length) ? rows[0].value : null; });
+  }
+  function showGateMode(){
+    $('gateLoading').hidden=true;
+    $('gateSetup').hidden=!!storedHash;
+    $('gateLogin').hidden=!storedHash;
+  }
+  function unlock(){
+    $('gateCard').hidden=true;
+    $('appMain').hidden=false;
+    loadRecordings();
+    loadMinutes();
+  }
+  function initGate(){
+    loadConfig().then(showGateMode).catch(function(){
+      $('gateLoading').hidden=true;
+      $('gateLogin').hidden=false;
+      gateError('连不上存储服务，请检查网络后刷新页面再试。');
+    });
+  }
+  $('setupBtn').addEventListener('click', function(){
+    gateClear();
+    var p1=$('setupPw1').value, p2=$('setupPw2').value;
+    if(p1.length<6){ gateError('密码至少 6 位。'); return; }
+    if(p1!==p2){ gateError('两次输入的密码不一致。'); return; }
+    var btn=this; btn.disabled=true; btn.textContent='正在保存……';
+    sha256Hex(p1).then(function(hash){
+      return api('/meeting_app_config', {method:'POST', headers:{'Prefer':'resolution=merge-duplicates,return=representation'}, body:{key:'app_password_sha256', value:hash, updated_at:new Date().toISOString()}})
+        .then(function(){ return loadConfig(); })
+        .then(function(){
+          btn.disabled=false; btn.textContent='设好密码并进入';
+          if(storedHash===hash){ showToast('密码已设置'); unlock(); }
+          else { showGateMode(); gateError('密码刚刚已被设置，请用那个密码登录。'); }
+        });
+    }).catch(function(){ btn.disabled=false; btn.textContent='设好密码并进入'; gateError('保存密码失败，请检查网络后重试。'); });
+  });
+  $('loginBtn').addEventListener('click', function(){
+    gateClear();
+    var pw=$('loginPw').value;
+    if(!pw){ gateError('先输入密码。'); return; }
+    var btn=this; btn.disabled=true; btn.textContent='正在验证……';
+    loadConfig().then(function(){
+      return sha256Hex(pw);
+    }).then(function(hash){
+      btn.disabled=false; btn.textContent='进入';
+      if(storedHash && hash===storedHash){ $('loginPw').value=''; unlock(); }
+      else gateError('密码不对，再试一次。');
+    }).catch(function(){ btn.disabled=false; btn.textContent='进入'; gateError('验证失败，请检查网络后重试。'); });
+  });
+  $('loginPw').addEventListener('keydown', function(e){ if(e.key==='Enter') $('loginBtn').click(); });
+  $('setupPw2').addEventListener('keydown', function(e){ if(e.key==='Enter') $('setupBtn').click(); });
+  $('lockBtn').addEventListener('click', function(){
+    $('appMain').hidden=true;
+    $('gateCard').hidden=false;
+    gateClear(); showGateMode();
+    showToast('已锁定');
+  });
+
+  // ---------- recorder ----------
+  var statusBadge=$('statusBadge'), statusText=$('statusText'), timerEl=$('timer'), timerNote=$('timerNote');
+  var mainBtn=$('mainBtn'), pauseBtn=$('pauseBtn'), stopBtn=$('stopBtn'), errorBox=$('errorBox');
+  var uploadStatus=$('uploadStatus');
+  var canvas=$('wave'), ctx=canvas.getContext('2d');
+  var transcriptEl=$('transcript'), liveLine=$('liveLine');
+
+  var stream=null, recorder=null, chunks=[], mimeType='';
+  var audioCtx=null, analyser=null, rafId=null;
+  var startStamp=0, elapsedBefore=0, timerInt=null, isRecording=false, isPaused=false;
+  var recognition=null, finalText='', recogWanted=false;
+  var wakeLock=null;
+
+  function showError(msg){ errorBox.textContent=msg; errorBox.classList.add('show'); }
+  function clearError(){ errorBox.classList.remove('show'); errorBox.textContent=''; }
+  function setUpload(state, html){
+    uploadStatus.className='upload-status show'+(state?' '+state:'');
+    uploadStatus.innerHTML=html;
+  }
+  function drawIdle(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--line')||'#ccc';
+    var bars=48, bw=canvas.width/bars;
+    for(var i=0;i<bars;i++){ var h=4+Math.sin(i*.7)*2; ctx.fillRect(i*bw+2,(canvas.height-h)/2,bw-4,h); }
+  }
+  drawIdle();
+  function drawWave(){
+    if(!analyser) return;
+    var data=new Uint8Array(analyser.frequencyBinCount);
+    function loop(){
+      rafId=requestAnimationFrame(loop);
+      analyser.getByteFrequencyData(data);
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      var bars=48, step=Math.floor(data.length/bars), bw=canvas.width/bars;
+      ctx.fillStyle='#C93A2E';
+      for(var i=0;i<bars;i++){
+        var v=data[i*step]/255, h=Math.max(4,v*canvas.height*.92);
+        ctx.beginPath();
+        var x=i*bw+2, y=(canvas.height-h)/2;
+        if(ctx.roundRect){ ctx.roundRect(x,y,bw-4,h,3); } else { ctx.rect(x,y,bw-4,h); }
+        ctx.fill();
+      }
+    }
+    loop();
+  }
+  function setStatus(mode,text){
+    statusBadge.classList.remove('recording','paused');
+    if(mode) statusBadge.classList.add(mode);
+    statusText.textContent=text;
+  }
+  function startTimer(){ startStamp=Date.now(); timerInt=setInterval(function(){ timerEl.textContent=fmtClock(elapsedBefore+(Date.now()-startStamp)); },250); }
+  function stopTimer(){
+    if(timerInt) clearInterval(timerInt); timerInt=null;
+    if(startStamp){ elapsedBefore+=Date.now()-startStamp; startStamp=0; }
+    timerEl.textContent=fmtClock(elapsedBefore);
+    return elapsedBefore;
+  }
+  function setupRecognition(){
+    var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SR){ liveLine.textContent='当前浏览器不支持边录边转文字，录音不受影响，授权后 Muse 一样能转写。'; return null; }
+    var r=new SR();
+    r.lang='zh-CN'; r.continuous=true; r.interimResults=true;
+    r.onresult=function(e){
+      var interim='';
+      for(var i=e.resultIndex;i<e.results.length;i++){
+        var t=e.results[i][0].transcript;
+        if(e.results[i].isFinal){ finalText+=t+'。'; } else { interim+=t; }
+      }
+      transcriptEl.value=finalText;
+      liveLine.innerHTML='正在听…… <span class="interim"></span>';
+      liveLine.querySelector('.interim').textContent=interim;
+    };
+    r.onerror=function(e){ if(e.error==='not-allowed'||e.error==='service-not-allowed'){ liveLine.textContent='语音识别未获授权，录音不受影响。'; recogWanted=false; } };
+    r.onend=function(){ if(recogWanted && isRecording && !isPaused){ try{ r.start(); }catch(err){} } };
+    return r;
+  }
+  function pickMime(){
+    var candidates=['audio/webm;codecs=opus','audio/webm','audio/mp4','audio/ogg;codecs=opus','audio/ogg',''];
+    if(!window.MediaRecorder) return '';
+    for(var i=0;i<candidates.length;i++){ if(!candidates[i] || MediaRecorder.isTypeSupported(candidates[i])) return candidates[i]; }
+    return '';
+  }
+  function requestWakeLock(){ try{ if('wakeLock' in navigator) navigator.wakeLock.request('screen').then(function(w){ wakeLock=w; }); }catch(e){} }
+  function releaseWakeLock(){ try{ if(wakeLock){ wakeLock.release(); wakeLock=null; } }catch(e){} }
+
+  function startRecording(){
+    clearError();
+    uploadStatus.className='upload-status'; uploadStatus.innerHTML='';
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ showError('这个浏览器拿不到麦克风。请用 Chrome 或 Safari 打开这页再试。'); return; }
+    if(!window.MediaRecorder){ showError('这个浏览器不支持网页录音。请更新浏览器，或用手机自带录音机录完，用上面的「上传已有录音文件」传进来。'); return; }
+    navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false}})
+    .then(function(s){
+      stream=s; chunks=[]; mimeType=pickMime();
+      try{ recorder=new MediaRecorder(stream, mimeType?{mimeType:mimeType}:undefined); }
+      catch(e){ recorder=new MediaRecorder(stream); }
+      if(recorder.mimeType) mimeType=recorder.mimeType;
+      recorder.ondataavailable=function(e){ if(e.data && e.data.size>0) chunks.push(e.data); };
+      recorder.onstop=onRecorderStop;
+      recorder.start(1000);
+      try{
+        audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+        var src=audioCtx.createMediaStreamSource(stream);
+        analyser=audioCtx.createAnalyser(); analyser.fftSize=256; src.connect(analyser);
+        drawWave();
+      }catch(e){ analyser=null; }
+      elapsedBefore=0; timerEl.textContent='00:00:00'; startTimer();
+      isRecording=true; isPaused=false;
+      setStatus('recording','录音中');
+      timerNote.textContent='正在录音 · 保持这页打开，不要锁屏';
+      mainBtn.classList.add('is-recording'); mainBtn.setAttribute('aria-label','录音中');
+      mainBtn.disabled=true; pauseBtn.disabled=false; stopBtn.disabled=false;
+      pauseBtn.textContent='⏸ 暂停';
+      finalText=transcriptEl.value? transcriptEl.value.replace(/\s+$/,'')+' ' : '';
+      if($('liveToggle').checked){
+        recognition=setupRecognition();
+        if(recognition){ recogWanted=true; try{ recognition.start(); }catch(e){} }
+      } else {
+        recognition=null; recogWanted=false;
+        liveLine.textContent='未开启边录边转文字：本次只录音。';
+      }
+      requestWakeLock();
+    })
+    .catch(function(){ showError('麦克风没有打开：请在弹窗里点「允许」，或到浏览器设置里开启这页的麦克风权限，然后再点一次红色按钮。'); });
+  }
+
+  function onRecorderStop(){
+    var durationMs=elapsedBefore;
+    var blob=new Blob(chunks,{type:mimeType||'audio/webm'});
+    var title=$('recTitle').value.trim()||('会议录音 '+fileStamp());
+    var people=$('recPeople').value.trim();
+    cleanupAfterStop();
+    uploadRecording(blob, {title:title, participants:people, durationSec:Math.round(durationMs/1000), mime:mimeType||'audio/webm'});
+  }
+
+  function cleanupAfterStop(){
+    isRecording=false; isPaused=false; recogWanted=false;
+    if(recognition){ try{ recognition.stop(); }catch(e){} recognition=null; }
+    if(rafId) cancelAnimationFrame(rafId); rafId=null;
+    if(audioCtx){ try{ audioCtx.close(); }catch(e){} audioCtx=null; }
+    analyser=null;
+    if(stream){ stream.getTracks().forEach(function(t){ t.stop(); }); stream=null; }
+    recorder=null;
+    releaseWakeLock();
+    drawIdle();
+    setStatus('','已结束');
+    timerNote.textContent='录音已结束，正在上传到云端……';
+    mainBtn.classList.remove('is-recording'); mainBtn.disabled=false;
+    pauseBtn.disabled=true; stopBtn.disabled=true;
+    liveLine.textContent='';
+  }
+
+  function uploadRecording(blob, meta){
+    var path=uuid()+'-'+Math.random().toString(36).slice(2,10)+'.'+extFor(meta.mime);
+    setUpload('', '⏳ 正在上传录音（'+fmtSize(blob.size)+'）……请保持网络畅通，不要关页面。');
+    fetch(SB_URL+'/storage/v1/object/'+BUCKET+'/'+path, {
+      method:'POST',
+      headers: sbHeaders({'Content-Type': meta.mime, 'x-upsert':'false'}),
+      body: blob
+    }).then(function(r){
+      if(!r.ok) return r.text().then(function(t){ throw new Error('storage '+r.status+' '+t.slice(0,120)); });
+      return api('/meeting_recordings', {method:'POST', headers:{'Prefer':'return=representation'}, body:{
+        title: meta.title,
+        meeting_date: new Date().toISOString(),
+        duration_sec: meta.durationSec,
+        file_path: path,
+        file_size_bytes: blob.size,
+        mime_type: meta.mime,
+        participants: meta.participants||'',
+        allow_read: false
+      }});
+    }).then(function(){
+      setUpload('ok', '✅ 已保存到云端，出现在下方「录音」列表里，默认<strong>未授权</strong>。想让 Muse 读它出纪要，就在列表里打开它的「允许读取」。');
+      timerNote.textContent='已上传保存 · 在下方列表管理这条录音';
+      showToast('录音已保存到云端');
+      loadRecordings();
+    }).catch(function(err){
+      var url=URL.createObjectURL(blob);
+      setUpload('fail', '⚠️ 上传失败（'+String(err.message||err).slice(0,80)+'）。录音别丢：先点 <a href="'+url+'" download="'+meta.title+'.'+extFor(meta.mime)+'">下载到本机</a> 暂存，网络恢复后用「上传已有录音文件」传回来。');
+      timerNote.textContent='上传失败 · 请先把录音下载到本机暂存';
+    });
+  }
+
+  mainBtn.addEventListener('click', function(){ if(!isRecording) startRecording(); });
+  pauseBtn.addEventListener('click', function(){
+    if(!recorder) return;
+    if(!isPaused && recorder.state==='recording'){
+      recorder.pause(); stopTimer(); isPaused=true;
+      setStatus('paused','已暂停'); timerNote.textContent='已暂停 · 点「继续」接着录';
+      pauseBtn.textContent='▶ 继续';
+      recogWanted=false; if(recognition){ try{ recognition.stop(); }catch(e){} }
+    } else if(isPaused && recorder.state==='paused'){
+      recorder.resume(); startTimer(); isPaused=false;
+      setStatus('recording','录音中'); timerNote.textContent='正在录音 · 保持这页打开，不要锁屏';
+      pauseBtn.textContent='⏸ 暂停';
+      if(recognition){ recogWanted=true; try{ recognition.start(); }catch(e){} }
+    }
+  });
+  stopBtn.addEventListener('click', function(){
+    if(!recorder) return;
+    stopTimer();
+    try{ recorder.stop(); }catch(e){ cleanupAfterStop(); }
+  });
+
+  // upload existing file
+  $('fileUploadBtn').addEventListener('click', function(){
+    var f=$('fileInput').files && $('fileInput').files[0];
+    if(!f){ showToast('先选一个录音文件'); return; }
+    var title=f.name.replace(/\.[^.]+$/,'')||'上传的录音';
+    uploadRecording(f, {title:title, participants:'', durationSec:null, mime:f.type||'audio/mpeg'});
+    $('fileInput').value='';
+  });
+
+  // ---------- recordings list ----------
+  var recList=$('recList');
+  var recordingsById={};
+
+  function loadRecordings(){
+    api('/meeting_recordings?select=*&order=created_at.desc')
+      .then(function(rows){ renderRecordings(rows||[]); renderMinutes(minutesCache); })
+      .catch(function(){ recList.innerHTML='<div class="empty">录音列表加载失败，请检查网络后刷新页面。</div>'; });
+  }
+  function renderRecordings(rows){
+    recordingsById={};
+    recList.innerHTML='';
+    if(!rows.length){ recList.innerHTML='<div class="empty">还没有录音。用上面的红色按钮录第一段，或上传一个已有录音文件。</div>'; return; }
+    rows.forEach(function(rec){
+      recordingsById[rec.id]=rec;
+      var url=publicUrl(rec.file_path);
+      var div=document.createElement('div'); div.className='rec-item';
+      var head=document.createElement('div'); head.className='rec-item-head';
+      var b=document.createElement('b'); b.textContent=rec.title||'未命名会议';
+      var meta=document.createElement('span'); meta.className='rec-meta';
+      var bits=[fmtDate(rec.meeting_date||rec.created_at), fmtDur(rec.duration_sec), fmtSize(rec.file_size_bytes)];
+      if(rec.participants) bits.push('参会：'+rec.participants);
+      meta.textContent=bits.filter(Boolean).join(' · ');
+      head.appendChild(b); head.appendChild(meta);
+      div.appendChild(head);
+      var audio=document.createElement('audio'); audio.controls=true; audio.src=url; audio.preload='metadata';
+      div.appendChild(audio);
+
+      var allowRow=document.createElement('div'); allowRow.className='allow-row';
+      var sw=document.createElement('button'); sw.className='switch'; sw.type='button';
+      sw.setAttribute('role','switch'); sw.setAttribute('aria-checked', rec.allow_read?'true':'false');
+      sw.setAttribute('aria-label','允许读取');
+      var knob=document.createElement('span'); knob.className='knob'; sw.appendChild(knob);
+      var lab=document.createElement('span'); lab.className='allow-label'; lab.textContent='允许 Muse 读取';
+      var state=document.createElement('span'); state.className='allow-state'+(rec.allow_read?' on':'');
+      state.textContent=rec.allow_read?'已授权：Muse 可以读这条录音':'未授权：Muse 读不到这条录音';
+      sw.addEventListener('click', function(){
+        var next=!rec.allow_read;
+        sw.disabled=true;
+        api('/meeting_recordings?id=eq.'+rec.id, {method:'PATCH', headers:{'Prefer':'return=representation'}, body:{allow_read:next}})
+          .then(function(){ rec.allow_read=next; sw.setAttribute('aria-checked', next?'true':'false'); state.className='allow-state'+(next?' on':''); state.textContent=next?'已授权：Muse 可以读这条录音':'未授权：Muse 读不到这条录音'; showToast(next?'已允许读取':'已撤销授权'); })
+          .catch(function(){ showToast('操作失败，请重试'); })
+          .then(function(){ sw.disabled=false; });
+      });
+      allowRow.appendChild(sw); allowRow.appendChild(lab); allowRow.appendChild(state);
+      div.appendChild(allowRow);
+
+      var actions=document.createElement('div'); actions.className='rec-actions';
+      var dl=document.createElement('a'); dl.className='btn small green'; dl.textContent='⬇️ 下载'; dl.href=url; dl.download=(rec.title||'录音')+'.'+extFor(rec.mime_type); dl.style.textDecoration='none';
+      var draft=document.createElement('button'); draft.className='btn small'; draft.textContent='✦ 生成纪要草稿';
+      draft.addEventListener('click', function(){ draftMinutesFromRecording(rec); });
+      var del=document.createElement('button'); del.className='btn small danger'; del.textContent='🗑 删除录音';
+      del.addEventListener('click', function(){
+        armConfirm(del, '🗑 删除录音', function(){
+          del.disabled=true; del.textContent='正在删除……';
+          fetch(SB_URL+'/storage/v1/object/'+BUCKET, {method:'DELETE', headers:sbHeaders({'Content-Type':'application/json'}), body:JSON.stringify({prefixes:[rec.file_path]})})
+            .then(function(){ return api('/meeting_recordings?id=eq.'+rec.id, {method:'DELETE'}); })
+            .then(function(){ showToast('录音已删除，纪要不受影响'); loadRecordings(); })
+            .catch(function(){ del.disabled=false; del.textContent='🗑 删除录音'; showToast('删除失败，请重试'); });
+        });
+      });
+      actions.appendChild(dl); actions.appendChild(draft); actions.appendChild(del);
+      div.appendChild(actions);
+      recList.appendChild(div);
+    });
+  }
+
+  // ---------- minutes ----------
+  var minList=$('minList');
+  var minutesCache=[];
+  var editingMinuteId=null, linkedRecordingId=null;
+
+  function loadMinutes(){
+    api('/meeting_minutes?select=*&order=updated_at.desc')
+      .then(function(rows){ minutesCache=rows||[]; renderMinutes(minutesCache); })
+      .catch(function(){ minList.innerHTML='<div class="empty">纪要列表加载失败，请检查网络后刷新页面。</div>'; });
+  }
+  function renderMinutes(rows){
+    minList.innerHTML='';
+    if(!rows.length){ minList.innerHTML='<div class="empty">还没有纪要。在上方写一条保存，或在某条录音上点「生成纪要草稿」。</div>'; return; }
+    rows.forEach(function(m){
+      var div=document.createElement('div'); div.className='rec-item';
+      var head=document.createElement('div'); head.className='rec-item-head';
+      var b=document.createElement('b'); b.textContent=m.title||'未命名纪要';
+      var meta=document.createElement('span'); meta.className='rec-meta'; meta.textContent='更新于 '+fmtDate(m.updated_at||m.created_at);
+      head.appendChild(b); head.appendChild(meta);
+      div.appendChild(head);
+      if(m.recording_id && recordingsById[m.recording_id]){
+        var link=document.createElement('div'); link.style.marginTop='6px';
+        var tag=document.createElement('span'); tag.className='linked'; tag.textContent='关联录音：'+(recordingsById[m.recording_id].title||'未命名会议');
+        link.appendChild(tag); div.appendChild(link);
+      } else if(m.recording_id){
+        var link2=document.createElement('div'); link2.style.marginTop='6px';
+        var tag2=document.createElement('span'); tag2.className='linked'; tag2.textContent='关联录音已删除，纪要保留';
+        link2.appendChild(tag2); div.appendChild(link2);
+      }
+      var body=document.createElement('div'); body.className='min-body'; body.textContent=m.content||'';
+      div.appendChild(body);
+      var actions=document.createElement('div'); actions.className='rec-actions';
+      var edit=document.createElement('button'); edit.className='btn small'; edit.textContent='✏️ 编辑';
+      edit.addEventListener('click', function(){
+        editingMinuteId=m.id; linkedRecordingId=m.recording_id||null;
+        $('minTitle').value=m.title||''; $('minContent').value=m.content||'';
+        $('minSaveBtn').textContent='💾 保存修改';
+        $('minCancelEditBtn').hidden=false;
+        updateLinkNote();
+        $('minTitle').scrollIntoView({behavior:'smooth', block:'center'});
+      });
+      var cp=document.createElement('button'); cp.className='btn small'; cp.textContent='📋 复制';
+      cp.addEventListener('click', function(){ copyText(m.content||'', '纪要已复制'); });
+      var dl=document.createElement('button'); dl.className='btn small'; dl.textContent='⬇️ 下载 .md';
+      dl.addEventListener('click', function(){ downloadText(m.content||'', (m.title||'纪要')+'.md'); });
+      var del=document.createElement('button'); del.className='btn small danger'; del.textContent='🗑 删除纪要';
+      del.addEventListener('click', function(){
+        armConfirm(del, '🗑 删除纪要', function(){
+          del.disabled=true; del.textContent='正在删除……';
+          api('/meeting_minutes?id=eq.'+m.id, {method:'DELETE'})
+            .then(function(){ if(editingMinuteId===m.id) resetMinuteEditor(); showToast('纪要已删除，录音不受影响'); loadMinutes(); })
+            .catch(function(){ del.disabled=false; del.textContent='🗑 删除纪要'; showToast('删除失败，请重试'); });
+        });
+      });
+      actions.appendChild(edit); actions.appendChild(cp); actions.appendChild(dl); actions.appendChild(del);
+      div.appendChild(actions);
+      minList.appendChild(div);
+    });
+  }
+  function updateLinkNote(){
+    $('minLinkNote').textContent=linkedRecordingId ? ('将关联录音：'+((recordingsById[linkedRecordingId]||{}).title||'已选录音')+'（删录音不会删这条纪要）') : '';
+  }
+  function resetMinuteEditor(){
+    editingMinuteId=null; linkedRecordingId=null;
+    $('minTitle').value=''; $('minContent').value='';
+    $('minSaveBtn').textContent='💾 保存纪要';
+    $('minCancelEditBtn').hidden=true;
+    updateLinkNote();
+  }
+  $('minCancelEditBtn').addEventListener('click', resetMinuteEditor);
+  $('minSaveBtn').addEventListener('click', function(){
+    var title=$('minTitle').value.trim()||'未命名纪要';
+    var content=$('minContent').value;
+    if(!content.trim()){ showToast('纪要内容还是空的'); return; }
+    var btn=this; btn.disabled=true;
+    var done=function(){ btn.disabled=false; resetMinuteEditor(); showToast('纪要已保存'); loadMinutes(); };
+    var fail=function(){ btn.disabled=false; showToast('保存失败，请重试'); };
+    if(editingMinuteId){
+      api('/meeting_minutes?id=eq.'+editingMinuteId, {method:'PATCH', headers:{'Prefer':'return=representation'}, body:{title:title, content:content, updated_at:new Date().toISOString()}}).then(done).catch(fail);
+    } else {
+      api('/meeting_minutes', {method:'POST', headers:{'Prefer':'return=representation'}, body:{title:title, content:content, source:linkedRecordingId?'recording':'manual', recording_id:linkedRecordingId}}).then(done).catch(fail);
+    }
+  });
+  $('minCopyBtn').addEventListener('click', function(){ copyText($('minContent').value, '纪要已复制'); });
+  $('minDlBtn').addEventListener('click', function(){
+    var text=$('minContent').value;
+    if(!text){ showToast('先写点纪要内容再下载'); return; }
+    downloadText(text, ($('minTitle').value.trim()||'纪要')+'.md');
+  });
+
+  // ---------- draft generation ----------
+  function splitSentences(text){
+    return text.replace(/\s+/g,' ').split(/(?<=[。！？；])|\n+/).map(function(s){ return s.trim(); }).filter(function(s){ return s.length>=4; });
+  }
+  function pick(sentences, keywords, limit){
+    var out=[];
+    for(var i=0;i<sentences.length;i++){ for(var k=0;k<keywords.length;k++){ if(sentences[i].indexOf(keywords[k])>-1){ out.push(sentences[i]); break; } } if(out.length>=limit) break; }
+    return out;
+  }
+  function draftMinutesFromRecording(rec){
+    editingMinuteId=null;
+    linkedRecordingId=rec.id;
+    $('minCancelEditBtn').hidden=true;
+    $('minSaveBtn').textContent='💾 保存纪要';
+    $('minTitle').value=(rec.title||'未命名会议')+' — 纪要';
+    var text=transcriptEl.value.trim();
+    var lines=[];
+    lines.push('# '+(rec.title||'未命名会议')+' — 纪要');
+    lines.push('');
+    lines.push('- 日期：'+fmtDate(rec.meeting_date||rec.created_at));
+    if(rec.participants) lines.push('- 参会人：'+rec.participants);
+    lines.push('');
+    if(text){
+      var sentences=splitSentences(text);
+      var decisions=pick(sentences, ['决定','确定','通过','同意','结论','定下来','就这么定'], 6);
+      var todos=pick(sentences, ['负责','跟进','提交','完成','截止','下周','明天','今天内','需要','安排','对接','交付','报价'], 8);
+      lines.push('## 摘要');
+      sentences.slice(0,3).forEach(function(s){ lines.push(s); });
+      lines.push('');
+      lines.push('## 决议');
+      if(decisions.length) decisions.forEach(function(s){ lines.push('- '+s); }); else lines.push('- （未从文字稿中识别到明确决议，请人工补充）');
+      lines.push('');
+      lines.push('## 待办');
+      if(todos.length) todos.forEach(function(s){ lines.push('- [ ] '+s); }); else lines.push('- [ ] （未从文字稿中识别到明确待办，请人工补充负责人和截止时间）');
+      lines.push('');
+      lines.push('说明：本稿为页内按文字稿粗整理的草稿；正式版请打开这条录音的「允许读取」，让 Muse 读原录音转写后精修。');
+    } else {
+      lines.push('## 摘要');
+      lines.push('（待补充：打开这条录音的「允许读取」后，让 Muse 读原录音转写生成。）');
+      lines.push('');
+      lines.push('## 决议');
+      lines.push('- （待补充）');
+      lines.push('');
+      lines.push('## 待办');
+      lines.push('- [ ] （待补充负责人和截止时间）');
+    }
+    $('minContent').value=lines.join('\n');
+    updateLinkNote();
+    $('minTitle').scrollIntoView({behavior:'smooth', block:'center'});
+    showToast('纪要草稿已生成，改好后点保存');
+  }
+
+  // ---------- transcript tools ----------
+  $('copyTranscriptBtn').addEventListener('click', function(){ copyText(transcriptEl.value, '文字稿已复制'); });
+  $('clearTranscriptBtn').addEventListener('click', function(){ transcriptEl.value=''; finalText=''; liveLine.textContent=''; showToast('已清空'); });
+
+  initGate();
+})();
+</script>
+</body>
+</html>
