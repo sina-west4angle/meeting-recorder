@@ -175,7 +175,7 @@ details ul{padding-left:18px;margin:8px 0 14px}
     <h1>录音纪要<span>。</span></h1>
     <p>开会时把手机放桌上、外放打开，点红按钮就录。录音自动存到云端，不用再手动发文件 —— 你在下面点开某条录音的「允许读取」，Muse 才能读它、转写出纪要。录音和纪要分开存、分开删，互不影响。</p>
     <div class="pills">
-      <span class="pill">🔑 <strong>密码进门</strong> · 拿到密码就能操作</span>
+      <span class="pill">🔑 <strong>密码进门</strong> · 登录一次，这台设备记住</span>
       <span class="pill">☁️ <strong>录音存云端</strong> · 离开这页也还在</span>
       <span class="pill">🛡️ <strong>默认不授权</strong> · 点了允许 Muse 才能读</span>
     </div>
@@ -189,14 +189,14 @@ details ul{padding-left:18px;margin:8px 0 14px}
     </div>
     <div id="gateSetup" hidden>
       <h2 style="margin-top:14px">先设一个管理密码</h2>
-      <p class="gate-msg">这是第一次打开，还没有密码。请管理员（你本人）设一个：以后任何人打开这页，都要输对这个密码才能看到录音和纪要、才能操作。把密码告诉哪个 Muse，哪个 Muse 就能进来操作。</p>
+      <p class="gate-msg">这是第一次打开，还没有密码。请管理员（你本人）设一个：以后任何人打开这页，都要输对这个密码才能看到录音和纪要、才能操作。把密码告诉哪个 Muse，哪个 Muse 就能进来操作。设好后这台设备会自动记住登录，下次打开直接进入，不用再输密码。</p>
       <label class="field"><span>设置密码 <em>（至少 6 位，请记牢）</em></span><input type="password" id="setupPw1" autocomplete="new-password" placeholder="输入密码"></label>
       <label class="field"><span>再输一次确认</span><input type="password" id="setupPw2" autocomplete="new-password" placeholder="再输入一次"></label>
       <div class="toolbar"><button class="btn green" id="setupBtn">设好密码并进入</button></div>
     </div>
     <div id="gateLogin" hidden>
       <h2 style="margin-top:14px">输入密码进入</h2>
-      <p class="gate-msg">录音和纪要都锁在密码后面。输对密码才能看列表、播放、授权和删除。</p>
+      <p class="gate-msg">录音和纪要都锁在密码后面。输对密码才能看列表、播放、授权和删除。输对一次后，这台设备会记住登录，下次打开自动进入，不用再输。</p>
       <label class="field"><span>密码</span><input type="password" id="loginPw" autocomplete="current-password" placeholder="输入密码"></label>
       <div class="toolbar"><button class="btn green" id="loginBtn">进入</button></div>
     </div>
@@ -205,8 +205,8 @@ details ul{padding-left:18px;margin:8px 0 14px}
 
   <div id="appMain" hidden>
     <div class="session-bar">
-      <span>✅ <b>已进入</b> · 录音与纪要都在云端，关掉页面不会丢</span>
-      <button class="btn small" id="lockBtn">锁定退出</button>
+      <span>✅ <b>已进入</b> · 这台设备已记住登录，下次打开自动进入</span>
+      <button class="btn small" id="lockBtn">锁定退出（取消记住）</button>
     </div>
 
     <!-- Recorder -->
@@ -284,7 +284,7 @@ details ul{padding-left:18px;margin:8px 0 14px}
     <section class="card" aria-label="使用说明">
       <h2>怎么用最顺</h2>
       <div class="steps">
-        <div class="step"><b><span class="step-num">1</span>输密码，点录音</b><p>开会前打开这页、输密码进入，把手机放桌子中间、外放打开，点红按钮开录。重要会议先录 10 秒试听回放，确认能听清。</p></div>
+        <div class="step"><b><span class="step-num">1</span>打开就录</b><p>第一次输密码进入后，这台设备会记住，之后开会前打开这页直接就能录。把手机放桌子中间、外放打开，点红按钮开录。重要会议先录 10 秒试听回放，确认能听清。</p></div>
         <div class="step"><b><span class="step-num">2</span>结束自动上传</b><p>点「结束并上传保存」，录音就存到云端列表里了。新录音默认不授权，任何 Muse 都读不到。</p></div>
         <div class="step"><b><span class="step-num">3</span>点允许读取，叫 Muse</b><p>在录音列表里打开那条的「允许读取」，再回 Muse 对话说一句「读一下我授权的录音出纪要」，就会得到带决议和待办的正式版。</p></div>
       </div>
@@ -295,6 +295,8 @@ details ul{padding-left:18px;margin:8px 0 14px}
           <li><strong>删了录音，纪要还在吗？</strong> 在。录音和纪要分开存、分开删：删录音只删音频文件和录音记录，纪要一条不动；反过来删纪要也不动录音。纪要做好后想删录音省空间、保隐私，放心删。</li>
           <li><strong>「允许读取」关掉会怎样？</strong> Muse 立刻就读不到这条了。授权随时开、随时撤，不用等谁批准。</li>
           <li><strong>密码忘了怎么办？</strong> 密码只存了加密摘要，这页没法找回。让 Muse 帮你在后台清空密码，你下次打开时重新设一个即可。</li>
+          <li><strong>为什么这次不用输密码？</strong> 这台设备在你上次登录成功后记住了登录，下次打开会自动进入。记住的只是密码的加密摘要，不是明文密码；换一台设备、换一个浏览器，或清除了浏览器数据，还是要重新输一次。</li>
+          <li><strong>不想让这台设备再自动进入怎么办？</strong> 点上方绿条右侧的「锁定退出（取消记住）」，就会清掉这台设备的记住状态，下次打开要重新输密码。共用设备上建议这样退出。</li>
           <li><strong>点了录音没反应 / 没有授权弹窗？</strong> 请用 Chrome 或 Safari 打开这页，并检查浏览器设置里这页的麦克风权限是否被关掉。</li>
           <li><strong>能录多久？</strong> 没有在本页设上限，受手机电量和网络限制。长会议建议每 30–45 分钟停一次、等上传成功，再开新一段，更保险。</li>
           <li><strong>边录边转文字没出来？</strong> 这个功能靠浏览器自带的语音识别，iPhone Safari 支持有限。没关系，录音文件本身是完整的，授权后 Muse 一样能转写。</li>
@@ -384,6 +386,16 @@ details ul{padding-left:18px;margin:8px 0 14px}
   function gateError(msg){ gateErr.textContent=msg; gateErr.classList.add('show'); }
   function gateClear(){ gateErr.classList.remove('show'); gateErr.textContent=''; }
   var storedHash=null;
+  var REMEMBER_KEY='musesina_recorder_login_v1';
+  function getRemembered(){
+    try{ return window.localStorage.getItem(REMEMBER_KEY); }catch(e){ return null; }
+  }
+  function rememberLogin(hash){
+    try{ window.localStorage.setItem(REMEMBER_KEY, hash); }catch(e){}
+  }
+  function forgetLogin(){
+    try{ window.localStorage.removeItem(REMEMBER_KEY); }catch(e){}
+  }
 
   function loadConfig(){
     return api('/meeting_app_config?select=value&key=eq.app_password_sha256')
@@ -401,7 +413,16 @@ details ul{padding-left:18px;margin:8px 0 14px}
     loadMinutes();
   }
   function initGate(){
-    loadConfig().then(showGateMode).catch(function(){
+    loadConfig().then(function(){
+      var remembered=getRemembered();
+      if(storedHash && remembered && remembered===storedHash){
+        unlock();
+        showToast('已自动登录');
+        return;
+      }
+      if(remembered && remembered!==storedHash) forgetLogin();
+      showGateMode();
+    }).catch(function(){
       $('gateLoading').hidden=true;
       $('gateLogin').hidden=false;
       gateError('连不上存储服务，请检查网络后刷新页面再试。');
@@ -418,7 +439,7 @@ details ul{padding-left:18px;margin:8px 0 14px}
         .then(function(){ return loadConfig(); })
         .then(function(){
           btn.disabled=false; btn.textContent='设好密码并进入';
-          if(storedHash===hash){ showToast('密码已设置'); unlock(); }
+          if(storedHash===hash){ rememberLogin(hash); showToast('密码已设置，这台设备已记住'); unlock(); }
           else { showGateMode(); gateError('密码刚刚已被设置，请用那个密码登录。'); }
         });
     }).catch(function(){ btn.disabled=false; btn.textContent='设好密码并进入'; gateError('保存密码失败，请检查网络后重试。'); });
@@ -432,17 +453,18 @@ details ul{padding-left:18px;margin:8px 0 14px}
       return sha256Hex(pw);
     }).then(function(hash){
       btn.disabled=false; btn.textContent='进入';
-      if(storedHash && hash===storedHash){ $('loginPw').value=''; unlock(); }
+      if(storedHash && hash===storedHash){ $('loginPw').value=''; rememberLogin(hash); showToast('已记住这台设备，下次自动进入'); unlock(); }
       else gateError('密码不对，再试一次。');
     }).catch(function(){ btn.disabled=false; btn.textContent='进入'; gateError('验证失败，请检查网络后重试。'); });
   });
   $('loginPw').addEventListener('keydown', function(e){ if(e.key==='Enter') $('loginBtn').click(); });
   $('setupPw2').addEventListener('keydown', function(e){ if(e.key==='Enter') $('setupBtn').click(); });
   $('lockBtn').addEventListener('click', function(){
+    forgetLogin();
     $('appMain').hidden=true;
     $('gateCard').hidden=false;
     gateClear(); showGateMode();
-    showToast('已锁定');
+    showToast('已锁定，下次打开需要重新输密码');
   });
 
   // ---------- recorder ----------
